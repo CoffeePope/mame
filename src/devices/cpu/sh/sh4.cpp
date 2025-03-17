@@ -32,7 +32,7 @@
 #include "sh4tmu.h"
 #include "sh_dasm.h"
 #include "cpu/drcumlsh.h"
-
+#include "sh34_timings.h"
 
 DEFINE_DEVICE_TYPE(SH3LE, sh3_device,   "sh3le", "Hitachi SH-3 (little)")
 DEFINE_DEVICE_TYPE(SH3BE, sh3be_device, "sh3be", "Hitachi SH-3 (big)")
@@ -1952,46 +1952,70 @@ inline void sh34_base_device::execute_one_f000(const uint16_t opcode)
 /* Execute cycles - returns number of cycles actually run */
 void sh34_base_device::execute_run()
 {
-	if (m_isdrc)
-	{
-		execute_run_drc();
-		return;
-	}
+    if (m_isdrc)
+    {
+        execute_run_drc();
+        return;
+    }
 
-	if (m_sh2_state->m_cpu_off)
-	{
-		debugger_wait_hook();
-		m_sh2_state->icount = 0;
-		return;
-	}
+    if (m_sh2_state->m_cpu_off)
+    {
+        debugger_wait_hook();
+        m_sh2_state->icount = 0;
+        return;
+    }
 
-	do
-	{
-		m_sh2_state->m_ppc = m_sh2_state->pc & SH34_AM;
-		debugger_instruction_hook(m_sh2_state->pc & SH34_AM);
+    do
+    {
+        m_sh2_state->m_ppc = m_sh2_state->pc & SH34_AM;
+        debugger_instruction_hook(m_sh2_state->pc & SH34_AM);
 
-		uint16_t opcode;
+        uint16_t opcode;
 
-		if (!m_sh4_mmu_enabled) opcode = m_pr16(m_sh2_state->pc & SH34_AM);
-		else opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
+        if (!m_sh4_mmu_enabled) opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+        else opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
 
-		if (m_sh2_state->m_delay)
-		{
-			m_sh2_state->pc = m_sh2_state->m_delay;
-			m_sh2_state->m_delay = 0;
-		}
-		else
-			m_sh2_state->pc += 2;
+        // Determine the number of cycles this instruction will take
+        bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
+        bool in_delay_slot = (m_sh2_state->m_delay != 0);
+        int base_cycles = sh_get_instruction_cycles(opcode, is_sh4, in_delay_slot);
 
-		execute_one(opcode);
+        if (m_sh2_state->m_delay)
+        {
+            m_sh2_state->pc = m_sh2_state->m_delay;
+            m_sh2_state->m_delay = 0;
+        }
+        else
+            m_sh2_state->pc += 2;
 
-		if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
-		{
-			sh4_check_pending_irq("mame_sh4_execute");
-		}
+        // Store the current ea value to detect memory access
+        uint32_t prev_ea = m_sh2_state->ea;
 
-		m_sh2_state->icount--;
-	} while (m_sh2_state->icount > 0);
+        execute_one(opcode);
+
+        // If the instruction performed a memory access, add the appropriate cycle penalty
+        if (sh_is_memory_access(opcode) || prev_ea != m_sh2_state->ea)
+        {
+            // Determine if this is a read or write based on instruction type
+            bool is_write = (opcode & 0xF000) == 0x1000 ||
+                           (opcode & 0xF00F) == 0x2000 ||
+                           (opcode & 0xF00F) == 0x2001 ||
+                           (opcode & 0xF00F) == 0x2002;
+
+            // Determine if the access is likely cached
+            bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
+
+            base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached);
+        }
+
+        if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
+        {
+            sh4_check_pending_irq("mame_sh4_execute");
+        }
+
+        // Subtract the computed cycles
+        m_sh2_state->icount -= base_cycles;
+    } while (m_sh2_state->icount > 0);
 }
 
 void sh3be_device::execute_run()
@@ -2014,25 +2038,52 @@ void sh3be_device::execute_run()
 		m_sh2_state->m_ppc = m_sh2_state->pc & SH34_AM;
 		debugger_instruction_hook(m_sh2_state->pc & SH34_AM);
 
-		const uint16_t opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+		uint16_t opcode = m_pr16(m_sh2_state->pc & SH34_AM);
 
-		if (m_sh2_state->m_delay)
-		{
-			m_sh2_state->pc = m_sh2_state->m_delay;
-			m_sh2_state->m_delay = 0;
-		}
-		else
-			m_sh2_state->pc += 2;
+        if (!m_sh4_mmu_enabled) opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+        else opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
 
-		execute_one(opcode);
+        // Determine the number of cycles this instruction will take
+        bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
+        bool in_delay_slot = (m_sh2_state->m_delay != 0);
+        int base_cycles = sh_get_instruction_cycles(opcode, is_sh4, in_delay_slot);
 
-		if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
-		{
-			sh4_check_pending_irq("mame_sh4_execute");
-		}
+        if (m_sh2_state->m_delay)
+        {
+            m_sh2_state->pc = m_sh2_state->m_delay;
+            m_sh2_state->m_delay = 0;
+        }
+        else
+            m_sh2_state->pc += 2;
 
-		m_sh2_state->icount--;
-	} while (m_sh2_state->icount > 0);
+        // Store the current ea value to detect memory access
+        uint32_t prev_ea = m_sh2_state->ea;
+
+        execute_one(opcode);
+
+        // If the instruction performed a memory access, add the appropriate cycle penalty
+        if (sh_is_memory_access(opcode) || prev_ea != m_sh2_state->ea)
+        {
+            // Determine if this is a read or write based on instruction type
+            bool is_write = (opcode & 0xF000) == 0x1000 ||
+                           (opcode & 0xF00F) == 0x2000 ||
+                           (opcode & 0xF00F) == 0x2001 ||
+                           (opcode & 0xF00F) == 0x2002;
+
+            // Determine if the access is likely cached
+            bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
+
+            base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached);
+        }
+
+        if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
+        {
+            sh4_check_pending_irq("mame_sh4_execute");
+        }
+
+        // Subtract the computed cycles
+        m_sh2_state->icount -= base_cycles;
+    } while (m_sh2_state->icount > 0);
 }
 
 void sh4be_device::execute_run()
@@ -2055,25 +2106,52 @@ void sh4be_device::execute_run()
 		m_sh2_state->m_ppc = m_sh2_state->pc & SH34_AM;
 		debugger_instruction_hook(m_sh2_state->pc & SH34_AM);
 
-		const uint16_t opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+		uint16_t opcode = m_pr16(m_sh2_state->pc & SH34_AM);
 
-		if (m_sh2_state->m_delay)
-		{
-			m_sh2_state->pc = m_sh2_state->m_delay;
-			m_sh2_state->m_delay = 0;
-		}
-		else
-			m_sh2_state->pc += 2;
+        if (!m_sh4_mmu_enabled) opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+        else opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
 
-		execute_one(opcode);
+        // Determine the number of cycles this instruction will take
+        bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
+        bool in_delay_slot = (m_sh2_state->m_delay != 0);
+        int base_cycles = sh_get_instruction_cycles(opcode, is_sh4, in_delay_slot);
 
-		if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
-		{
-			sh4_check_pending_irq("mame_sh4_execute");
-		}
+        if (m_sh2_state->m_delay)
+        {
+            m_sh2_state->pc = m_sh2_state->m_delay;
+            m_sh2_state->m_delay = 0;
+        }
+        else
+            m_sh2_state->pc += 2;
 
-		m_sh2_state->icount--;
-	} while (m_sh2_state->icount > 0);
+        // Store the current ea value to detect memory access
+        uint32_t prev_ea = m_sh2_state->ea;
+
+        execute_one(opcode);
+
+        // If the instruction performed a memory access, add the appropriate cycle penalty
+        if (sh_is_memory_access(opcode) || prev_ea != m_sh2_state->ea)
+        {
+            // Determine if this is a read or write based on instruction type
+            bool is_write = (opcode & 0xF000) == 0x1000 ||
+                           (opcode & 0xF00F) == 0x2000 ||
+                           (opcode & 0xF00F) == 0x2001 ||
+                           (opcode & 0xF00F) == 0x2002;
+
+            // Determine if the access is likely cached
+            bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
+
+            base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached);
+        }
+
+        if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
+        {
+            sh4_check_pending_irq("mame_sh4_execute");
+        }
+
+        // Subtract the computed cycles
+        m_sh2_state->icount -= base_cycles;
+    } while (m_sh2_state->icount > 0);
 }
 
 void sh4_base_device::device_start()
