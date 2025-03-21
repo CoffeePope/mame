@@ -1973,8 +1973,10 @@
  
 		 uint16_t opcode;
  
-		 if (!m_sh4_mmu_enabled) opcode = m_pr16(m_sh2_state->pc & SH34_AM);
-		 else opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
+		 if (!m_sh4_mmu_enabled)
+			 opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+		 else
+			 opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
  
 		 // Determine the number of cycles this instruction will take
 		 bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
@@ -2001,12 +2003,24 @@
 			 bool is_write = (opcode & 0xF000) == 0x1000 ||
 							(opcode & 0xF00F) == 0x2000 ||
 							(opcode & 0xF00F) == 0x2001 ||
-							(opcode & 0xF00F) == 0x2002;
+							(opcode & 0xF00F) == 0x2002 ||
+							(opcode & 0xF00F) == 0x2004 ||
+							(opcode & 0xF00F) == 0x2005 ||
+							(opcode & 0xF00F) == 0x2006 ||
+							(opcode & 0xF00F) == 0x0004 ||
+							(opcode & 0xF00F) == 0x0005 ||
+							(opcode & 0xF00F) == 0x0006 ||
+							(opcode & 0xF00F) == 0xF00A ||
+							(opcode & 0xF00F) == 0xF00B;
+ 
+			 // Determine the access size from the opcode
+			 uint32_t access_size = sh_get_memory_access_size(opcode);
  
 			 // Determine if the access is likely cached
-			 bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
+			 bool is_cached = is_in_cache(m_sh2_state->ea);
  
-			 base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached);
+			 // Add memory cycles using the timing model
+			 base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached, false, access_size);
 		 }
  
 		 if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
@@ -2041,8 +2055,10 @@
  
 		 uint16_t opcode = m_pr16(m_sh2_state->pc & SH34_AM);
  
-		 if (!m_sh4_mmu_enabled) opcode = m_pr16(m_sh2_state->pc & SH34_AM);
-		 else opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
+		 if (!m_sh4_mmu_enabled)
+			 opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+		 else
+			 opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
  
 		 // Determine the number of cycles this instruction will take
 		 bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
@@ -2069,12 +2085,24 @@
 			 bool is_write = (opcode & 0xF000) == 0x1000 ||
 							(opcode & 0xF00F) == 0x2000 ||
 							(opcode & 0xF00F) == 0x2001 ||
-							(opcode & 0xF00F) == 0x2002;
+							(opcode & 0xF00F) == 0x2002 ||
+							(opcode & 0xF00F) == 0x2004 ||
+							(opcode & 0xF00F) == 0x2005 ||
+							(opcode & 0xF00F) == 0x2006 ||
+							(opcode & 0xF00F) == 0x0004 ||
+							(opcode & 0xF00F) == 0x0005 ||
+							(opcode & 0xF00F) == 0x0006 ||
+							(opcode & 0xF00F) == 0xF00A ||
+							(opcode & 0xF00F) == 0xF00B;
+ 
+			 // Determine the access size from the opcode
+			 uint32_t access_size = sh_get_memory_access_size(opcode);
  
 			 // Determine if the access is likely cached
-			 bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
+			 bool is_cached = is_in_cache(m_sh2_state->ea);
  
-			 base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached);
+			 // Add memory cycles using the timing model
+			 base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached, false, access_size);
 		 }
  
 		 if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
@@ -2109,8 +2137,10 @@
  
 		 uint16_t opcode = m_pr16(m_sh2_state->pc & SH34_AM);
  
-		 if (!m_sh4_mmu_enabled) opcode = m_pr16(m_sh2_state->pc & SH34_AM);
-		 else opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
+		 if (!m_sh4_mmu_enabled)
+			 opcode = m_pr16(m_sh2_state->pc & SH34_AM);
+		 else
+			 opcode = read_word(m_sh2_state->pc); // should probably use a different function as this needs to go through the ITLB
  
 		 // Determine the number of cycles this instruction will take
 		 bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
@@ -2137,12 +2167,24 @@
 			 bool is_write = (opcode & 0xF000) == 0x1000 ||
 							(opcode & 0xF00F) == 0x2000 ||
 							(opcode & 0xF00F) == 0x2001 ||
-							(opcode & 0xF00F) == 0x2002;
+							(opcode & 0xF00F) == 0x2002 ||
+							(opcode & 0xF00F) == 0x2004 ||
+							(opcode & 0xF00F) == 0x2005 ||
+							(opcode & 0xF00F) == 0x2006 ||
+							(opcode & 0xF00F) == 0x0004 ||
+							(opcode & 0xF00F) == 0x0005 ||
+							(opcode & 0xF00F) == 0x0006 ||
+							(opcode & 0xF00F) == 0xF00A ||
+							(opcode & 0xF00F) == 0xF00B;
+ 
+			 // Determine the access size from the opcode
+			 uint32_t access_size = sh_get_memory_access_size(opcode);
  
 			 // Determine if the access is likely cached
-			 bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
+			 bool is_cached = is_in_cache(m_sh2_state->ea);
  
-			 base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached);
+			 // Add memory cycles using the timing model
+			 base_cycles += sh_get_memory_cycles(m_sh2_state->ea, is_write, is_sh4, is_cached, false, access_size);
 		 }
  
 		 if (m_sh2_state->m_test_irq && !m_sh2_state->m_delay)
@@ -2410,7 +2452,78 @@
 		 m_fd_regmap[regnum] = uml::mem(((double *)(m_sh2_state->m_fr+(regnum))));
 	 }
  
+	 // Initialize memory context tracking structure
+	 sh_mem_context.last_address = 0;
+	 sh_mem_context.last_was_write = false;
+	 sh_mem_context.in_burst_mode = false;
+	 sh_mem_context.burst_count = 0;
+	 sh_mem_context.last_sdram_page = 0;
+	 sh_mem_context.tlb_cache_valid = false;
+	 sh_mem_context.tlb_cache_addr = 0;
+ 
 	 drc_start();
+ }
+ 
+ // Checks if an address is likely to be cached based on SH3/SH4 cache rules
+ bool sh34_base_device::is_in_cache(uint32_t address)
+ {
+	 // Basic cache architecture of SH3/SH4:
+	 // 1. P0 region (0x00000000-0x7FFFFFFF) is cacheable
+	 // 2. P1 region (0x80000000-0x9FFFFFFF) is non-cacheable (direct physical access)
+	 // 3. P2 region (0xA0000000-0xBFFFFFFF) is non-cacheable (IO space)
+	 // 4. P3 region (0xC0000000-0xDFFFFFFF) is typically non-cacheable (control registers)
+	 // 5. P4 region (0xE0000000-0xFFFFFFFF) is non-cacheable (on-chip peripherals)
+ 
+	 bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
+ 
+	 // First check the MMU if enabled (SH-4 only)
+	 if (is_sh4 && m_sh4_mmu_enabled)
+	 {
+		 // If MMU is enabled, we'd need to check the cache attribute bit in the UTLB entry
+		 // This is a simplified check - a full implementation would look up the UTLB entry
+		 // matching this virtual address and check the cache bit
+ 
+		 // For now, we'll use a simple heuristic based on address ranges
+		 if (address < 0x80000000)  // P0/U0 region
+		 {
+			 // Check if in one of the typical non-cacheable areas
+			 // Note: This doesn't account for actual UTLB entries, just common configurations
+ 
+			 // Some areas are typically non-cacheable even in P0
+			 if ((address >= 0x1F000000 && address <= 0x1FFFFFFF) || // Peripheral area
+				 (address >= 0x5C000000 && address <= 0x5FFFFFFF))   // Flash/ROM area that's often non-cacheable
+			 {
+				 return false;
+			 }
+ 
+			 // Most other areas in P0 are cacheable
+			 return true;
+		 }
+	 }
+	 else
+	 {
+		 // Without MMU or on SH-3, use the standard memory map rules
+ 
+		 // P0 region is cacheable
+		 if (address < 0x80000000)
+		 {
+			 // Some areas might be configured as non-cacheable via cache control
+			 // registers (CCR), but we'll assume default configuration here
+ 
+			 // On-chip memory areas
+			 if (address >= 0x1C000000 && address <= 0x1FFFFFFF)
+			 {
+				 // On-chip RAM is typically not cacheable as it's already fast
+				 return false;
+			 }
+ 
+			 // Default behavior for P0: cacheable
+			 return true;
+		 }
+	 }
+ 
+	 // P1, P2, P3 and P4 regions are never cached
+	 return false;
  }
  
  void sh34_base_device::state_import(const device_state_entry &entry)
@@ -2854,29 +2967,44 @@
 	 static_generate_memory_accessor
  ------------------------------------------------------------------*/
  
- void sh34_base_device::func_add_read_memory_cycles()
+ void sh34_base_device::func_drc_memory_read_timing()
  {
+	 // Use existing m_sh2_state->arg0 and arg1 for parameters
+	 uint32_t address = m_sh2_state->arg0;
+	 uint32_t access_size = m_sh2_state->arg1;
+ 
 	 bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
-	 bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
-	 m_sh2_state->icount -= sh_get_memory_cycles(m_sh2_state->ea, false, is_sh4, is_cached);
+	 bool is_cached = is_in_cache(address);
+	 bool is_code = false;  // This is a data read, not code fetch
+ 
+	 int cycles = sh_get_memory_cycles(address, false, is_sh4, is_cached, is_code, access_size);
+	 m_sh2_state->icount -= cycles;
  }
  
- void sh34_base_device::func_add_write_memory_cycles()
+ // Modified memory write timing function for DRC
+ void sh34_base_device::func_drc_memory_write_timing()
  {
+	 // Use existing m_sh2_state->arg0 and arg1 for parameters
+	 uint32_t address = m_sh2_state->arg0;
+	 uint32_t access_size = m_sh2_state->arg1;
+ 
 	 bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
-	 bool is_cached = (m_sh2_state->ea < 0x80000000 || m_sh2_state->ea > 0xE0000000);
-	 m_sh2_state->icount -= sh_get_memory_cycles(m_sh2_state->ea, true, is_sh4, is_cached);
+	 bool is_cached = is_in_cache(address);
+	 bool is_code = false;
+ 
+	 // Calculate and apply memory timing cycles
+	 int cycles = sh_get_memory_cycles(address, true, is_sh4, is_cached, is_code, access_size);
+	 m_sh2_state->icount -= cycles;
  }
  
- 
- static void cfunc_add_read_memory_cycles(void *param)
+ static void cfunc_drc_memory_read_timing(void *param)
  {
-	 ((sh34_base_device *)param)->func_add_read_memory_cycles();
+	 ((sh34_base_device *)param)->func_drc_memory_read_timing();
  }
  
- static void cfunc_add_write_memory_cycles(void *param)
+ static void cfunc_drc_memory_write_timing(void *param)
  {
-	 ((sh34_base_device *)param)->func_add_write_memory_cycles();
+	 ((sh34_base_device *)param)->func_drc_memory_write_timing();
  }
  
  void sh34_base_device::static_generate_memory_accessor(int size, int iswrite, const char *name, uml::code_handle *&handleptr)
@@ -2893,32 +3021,15 @@
 	 alloc_handle(handleptr, name);
 	 UML_HANDLE(block, *handleptr);                         // handle  *handleptr
  
- 
- #if 0
-	 if (A >= 0xe0000000)
-	 {
-		 m_program->write_word(A, V);
-		 return;
-	 }cfunc_
- 
-	 if (A >= 0x80000000) // P1/P2/P3 region
-	 {
-		 m_program->write_word(A & SH34_AM, V);
-	 }
-	 else
-	 {
-		 // MMU handling
-		 m_program->write_word(A & SH34_AM, V);
-	 }
- #endif
- 
+	 // Handle memory regions and address translation
 	 UML_CMP(block, I0, 0xe0000000);
 	 UML_JMPc(block, COND_AE, label);
  
-	 UML_AND(block, I0, I0, SH34_AM);     // and r0, r0, #AM (0x1fffffff)
+	 UML_AND(block, I0, I0, SH34_AM);                       // and r0, r0, #AM (0x1fffffff)
  
-	 UML_LABEL(block, label++);              // label:
+	 UML_LABEL(block, label++);                             // label:
  
+	 // Fast RAM path
 	 if ((machine().debug_flags & DEBUG_FLAG_ENABLED) == 0)
 	 {
 		 for (auto & elem : m_fastram)
@@ -2929,13 +3040,13 @@
 				 uint32_t skip = label++;
 				 if (elem.end != 0xffffffff)
 				 {
-					 UML_CMP(block, I0, elem.end);   // cmp     i0,end
-					 UML_JMPc(block, COND_A, skip);                                      // ja      skip
+					 UML_CMP(block, I0, elem.end);          // cmp     i0,end
+					 UML_JMPc(block, COND_A, skip);         // ja      skip
 				 }
 				 if (elem.start != 0x00000000)
 				 {
-					 UML_CMP(block, I0, elem.start);// cmp     i0,fastram_start
-					 UML_JMPc(block, COND_B, skip);                                      // jb      skip
+					 UML_CMP(block, I0, elem.start);        // cmp     i0,fastram_start
+					 UML_JMPc(block, COND_B, skip);         // jb      skip
 				 }
  
 				 if (!iswrite)
@@ -2943,90 +3054,104 @@
 					 if (size == 1)
 					 {
 						 UML_XOR(block, I0, I0, m_bigendian ? BYTE8_XOR_BE(0) : BYTE8_XOR_LE(0));
-						 UML_LOAD(block, I0, fastbase, I0, SIZE_BYTE, SCALE_x1);             // load    i0,fastbase,i0,byte
+						 UML_LOAD(block, I0, fastbase, I0, SIZE_BYTE, SCALE_x1);  // load    i0,fastbase,i0,byte
 					 }
 					 else if (size == 2)
 					 {
 						 UML_XOR(block, I0, I0, m_bigendian ? WORD2_XOR_BE(0) : WORD2_XOR_LE(0));
-						 UML_LOAD(block, I0, fastbase, I0, SIZE_WORD, SCALE_x1);         // load    i0,fastbase,i0,word_x1
+						 UML_LOAD(block, I0, fastbase, I0, SIZE_WORD, SCALE_x1);  // load    i0,fastbase,i0,word_x1
 					 }
 					 else if (size == 4)
 					 {
- 
 						 UML_XOR(block, I0, I0, m_bigendian ? DWORD_XOR_BE(0) : DWORD_XOR_LE(0));
-						 UML_LOAD(block, I0, fastbase, I0, SIZE_DWORD, SCALE_x1);            // load    i0,fastbase,i0,dword_x1
+						 UML_LOAD(block, I0, fastbase, I0, SIZE_DWORD, SCALE_x1); // load    i0,fastbase,i0,dword_x1
 					 }
  
-					 UML_CALLC(block, cfunc_add_read_memory_cycles, this);
+					 // Memory timing with enhanced model
+					 UML_MOV(block, mem(&m_sh2_state->arg0), I0);       // mov     [arg0],i0
+					 UML_MOV(block, mem(&m_sh2_state->arg1), size);     // mov     [arg1],size
+					 UML_CALLC(block, cfunc_drc_memory_read_timing, this); // callc  cfunc_drc_memory_read_timing,this
  
-					 UML_RET(block);                                                     // ret
+					 UML_RET(block);                                   // ret
 				 }
 				 else
 				 {
 					 if (size == 1)
 					 {
 						 UML_XOR(block, I0, I0, m_bigendian ? BYTE8_XOR_BE(0) : BYTE8_XOR_LE(0));
-						 UML_STORE(block, fastbase, I0, I1, SIZE_BYTE, SCALE_x1);// store   fastbase,i0,i1,byte
+						 UML_STORE(block, fastbase, I0, I1, SIZE_BYTE, SCALE_x1); // store   fastbase,i0,i1,byte
 					 }
 					 else if (size == 2)
 					 {
 						 UML_XOR(block, I0, I0, m_bigendian ? WORD2_XOR_BE(0) : WORD2_XOR_LE(0));
-						 UML_STORE(block, fastbase, I0, I1, SIZE_WORD, SCALE_x1);// store   fastbase,i0,i1,word_x1
+						 UML_STORE(block, fastbase, I0, I1, SIZE_WORD, SCALE_x1); // store   fastbase,i0,i1,word_x1
 					 }
 					 else if (size == 4)
 					 {
 						 UML_XOR(block, I0, I0, m_bigendian ? DWORD_XOR_BE(0) : DWORD_XOR_LE(0));
-						 UML_STORE(block, fastbase, I0, I1, SIZE_DWORD, SCALE_x1);       // store   fastbase,i0,i1,dword_x1
+						 UML_STORE(block, fastbase, I0, I1, SIZE_DWORD, SCALE_x1); // store   fastbase,i0,i1,dword_x1
 					 }
  
-					 UML_CALLC(block, cfunc_add_write_memory_cycles, this);
+					 // Memory timing with enhanced model
+					 UML_MOV(block, mem(&m_sh2_state->arg0), I0);        // mov     [arg0],i0
+					 UML_MOV(block, mem(&m_sh2_state->arg1), size);      // mov     [arg1],size
+					 UML_CALLC(block, cfunc_drc_memory_write_timing, this); // callc  cfunc_drc_memory_write_timing,this
  
-					 UML_RET(block);                                                     // ret
+					 UML_RET(block);                                    // ret
 				 }
  
-				 UML_LABEL(block, skip);                                             // skip:
+				 UML_LABEL(block, skip);                               // skip:
 			 }
 		 }
 	 }
  
+	 // Standard memory operations with timing
 	 if (iswrite)
 	 {
 		 switch (size)
 		 {
 			 case 1:
-				 UML_WRITE(block, I0, I1, SIZE_BYTE, SPACE_PROGRAM); // write r0, r1, program_byte
+				 UML_WRITE(block, I0, I1, SIZE_BYTE, SPACE_PROGRAM);  // write r0, r1, program_byte
 				 break;
  
 			 case 2:
-				 UML_WRITE(block, I0, I1, SIZE_WORD, SPACE_PROGRAM); // write r0, r1, program_word
+				 UML_WRITE(block, I0, I1, SIZE_WORD, SPACE_PROGRAM);  // write r0, r1, program_word
 				 break;
  
 			 case 4:
-				 UML_WRITE(block, I0, I1, SIZE_DWORD, SPACE_PROGRAM);    // write r0, r1, program_dword
+				 UML_WRITE(block, I0, I1, SIZE_DWORD, SPACE_PROGRAM); // write r0, r1, program_dword
 				 break;
 		 }
-		 UML_CALLC(block, cfunc_add_write_memory_cycles, this);
+ 
+		 // Memory timing with enhanced model
+		 UML_MOV(block, mem(&m_sh2_state->arg0), I0);                // mov     [arg0],i0
+		 UML_MOV(block, mem(&m_sh2_state->arg1), size);              // mov     [arg1],size
+		 UML_CALLC(block, cfunc_drc_memory_write_timing, this);      // callc   cfunc_drc_memory_write_timing,this
 	 }
 	 else
 	 {
 		 switch (size)
 		 {
 			 case 1:
-				 UML_READ(block, I0, I0, SIZE_BYTE, SPACE_PROGRAM);  // read r0, program_byte
+				 UML_READ(block, I0, I0, SIZE_BYTE, SPACE_PROGRAM);   // read r0, program_byte
 				 break;
  
 			 case 2:
-				 UML_READ(block, I0, I0, SIZE_WORD, SPACE_PROGRAM);  // read r0, program_word
+				 UML_READ(block, I0, I0, SIZE_WORD, SPACE_PROGRAM);   // read r0, program_word
 				 break;
  
 			 case 4:
-				 UML_READ(block, I0, I0, SIZE_DWORD, SPACE_PROGRAM); // read r0, program_dword
+				 UML_READ(block, I0, I0, SIZE_DWORD, SPACE_PROGRAM);  // read r0, program_dword
 				 break;
 		 }
-		 UML_CALLC(block, cfunc_add_read_memory_cycles, this);
+ 
+		 // Memory timing with enhanced model
+		 UML_MOV(block, mem(&m_sh2_state->arg0), I0);                // mov     [arg0],i0
+		 UML_MOV(block, mem(&m_sh2_state->arg1), size);              // mov     [arg1],size
+		 UML_CALLC(block, cfunc_drc_memory_read_timing, this);       // callc   cfunc_drc_memory_read_timing,this
 	 }
  
-	 UML_RET(block);                         // ret
+	 UML_RET(block);                                                 // ret
  
 	 block.end();
  }
@@ -3137,6 +3262,18 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_PREFM, this);
+ 
+	 // Add memory access timing with special prefetch handling
+	 // For PREFM, we use different timing - it's a special case
+	 bool is_sh4 = (m_cpu_type == CPU_TYPE_SH4);
+	 if(is_sh4) {
+		 // SH-4 has more efficient prefetch
+		 compiler.cycles += 1;
+	 } else {
+		 // SH-3 prefetch is less efficient
+		 compiler.cycles += 2;
+	 }
+ 
 	 load_fast_iregs(block);
 	 return true;
  }
@@ -3147,6 +3284,13 @@
 	 SETEA(0);
 	 UML_MOV(block, I1, R32(0));
 	 UML_CALLH(block, *m_write32);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 return true;
  }
  
@@ -3785,6 +3929,13 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_FMOVS0FR, this);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 load_fast_iregs(block);
 	 return true;
  }
@@ -3797,6 +3948,13 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_FMOVFRS0, this);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 load_fast_iregs(block);
 	 return true;
  }
@@ -3809,6 +3967,13 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_FMOVMRFR, this);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 load_fast_iregs(block);
 	 return true;
  }
@@ -3821,6 +3986,13 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_FMOVMRIFR, this);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 load_fast_iregs(block);
 	 return true;
  }
@@ -3833,6 +4005,13 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_FMOVFRMR, this);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 load_fast_iregs(block);
 	 return true;
  }
@@ -3845,6 +4024,13 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_FMOVFRMDR, this);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 load_fast_iregs(block);
 	 return true;
  }
@@ -3857,6 +4043,13 @@
 	 save_fast_iregs(block);
 	 UML_MOV(block, mem(&m_sh2_state->arg0), desc->opptr.w[0]);
 	 UML_CALLC(block, cfunc_FMOVFR, this);
+ 
+	 // Memory read timing
+	 // Store parameters in member variables
+	 UML_MOV(block, mem(&m_sh2_state->arg0), mem(&m_sh2_state->ea));
+	 UML_MOV(block, mem(&m_sh2_state->arg1), 4);  // 4-byte access
+	 UML_CALLC(block, cfunc_drc_memory_read_timing, this);
+ 
 	 load_fast_iregs(block);
 	 return true;
  }

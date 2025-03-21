@@ -252,8 +252,9 @@
 	 void func_STCSSR();
 	 void func_STCSPC();
  
-	 void func_add_read_memory_cycles();
-	 void func_add_write_memory_cycles();
+	 bool is_in_cache(uint32_t address);
+	 void func_drc_memory_read_timing();
+	 void func_drc_memory_write_timing();
  
  protected:
 	 // construction/destruction
